@@ -132,39 +132,62 @@ public class MyUI extends UI {
     		simulate();
     		
     		plotOptions.setItems(listOfVectorPairs);
-    		canvas.drawGrid(timeList, wList, 8, 8);
+    		canvas.drawAxes(timeList, wList, 8, 8);
     		canvas.plot(timeList, wrefList, "blue");
     		canvas.plot(timeList, wList, "green");
+    		
+    		System.out.println("wrefmin: " + wrefList.stream().min(Double::compare).get());
+        	System.out.println("wrefmax: " + wrefList.stream().max(Double::compare).get());
+        	System.out.println("wmin: " + wList.stream().min(Double::compare).get());
+        	System.out.println("wmax: " + wList.stream().max(Double::compare).get());
+        	System.out.println("iqrefmax: " + iqrefList.stream().max(Double::compare).get());
+        	System.out.println("iqrefmin: " + iqrefList.stream().min(Double::compare).get());
+        	System.out.println("iqmin: " + iqList.stream().min(Double::compare).get());
+        	System.out.println("iqmax: " + iqList.stream().max(Double::compare).get());
+        	System.out.println("idrefmax: " + idrefList.stream().max(Double::compare).get());
+        	System.out.println("idrefmin: " + idrefList.stream().min(Double::compare).get());
+        	System.out.println("idmin: " + idList.stream().min(Double::compare).get());
+        	System.out.println("idmax: " + idList.stream().max(Double::compare).get());
+        	System.out.println("udmax: " + udList.stream().max(Double::compare).get());
+        	System.out.println("udmin: " + udList.stream().min(Double::compare).get());
+        	System.out.println("uqmin: " + uqList.stream().min(Double::compare).get());
+        	System.out.println("uqmax: " + uqList.stream().max(Double::compare).get());
 
         });
     	
     	plotOptions.addValueChangeListener(e -> {
     		if(plotOptions.getValue().toString().equals("iqref vs iq")){
     			canvas.clear();
-    			canvas.drawGrid(timeList, iqList, 8, 8);
-    			canvas.plot(timeList, iqrefList, "blue");
-    			canvas.plot(timeList, iqList, "green");
-
+    			canvas.drawAxes2(timeList, iqrefList, iqList, 8, 8);
+    			//canvas.plot(timeList, iqrefList, "blue");
+    			//canvas.plot(timeList, iqList, "green");
+    			canvas.plot2(timeList, iqrefList, iqList, "blue", "green");
     		}else if(plotOptions.getValue().toString().equals("idref vs id")){
     			canvas.clear();
-    			canvas.drawGrid(timeList, idList, 8, 8);
-    			canvas.plot(timeList, idrefList, "blue");
-    			canvas.plot(timeList, idList, "green");
+    			canvas.drawAxes2(timeList, idrefList, idList, 8, 8);
+    			//canvas.plot(timeList, idrefList, "blue");
+    			//canvas.plot(timeList, idList, "green");
+    			canvas.plot2(timeList, idrefList, idList, "blue", "green");
 
     		}else if(plotOptions.getValue().toString().equals("ud vs uq")){
     			canvas.clear();
-    			canvas.drawGrid(timeList, uqList, 8, 8);
-    			canvas.plot(timeList, udList, "blue");
-    			canvas.plot(timeList, uqList, "magenta");
+    			canvas.drawAxes2(timeList, udList, uqList, 8, 8);
+    			//canvas.plot(timeList, udList, "blue");
+    			//canvas.plot(timeList, uqList, "magenta");
+    			canvas.plot2(timeList, udList, uqList, "blue", "magenta");
 
     		}else if(plotOptions.getValue().toString().equals("wref vs w")){
     			canvas.clear();
-    			canvas.drawGrid(timeList, wList, 8, 8);
-    			canvas.plot(timeList, wrefList, "blue");
-    			canvas.plot(timeList, wList, "green");
+    			canvas.drawAxes2(timeList, wrefList, wList, 8, 8);
+    			//canvas.plot(timeList, wrefList, "blue");
+    			//canvas.plot(timeList, wList, "green");
+    			canvas.plot2(timeList, wrefList, wList, "blue", "green");
 
     		}
     	});
+    	
+    	
+    	
     	
     	Panel main = new Panel();
     	main.setSizeFull();
