@@ -42,7 +42,7 @@ public class MyCanvas extends Canvas{
 			double xpixel = 0;
 			double ypixel = 0;
 			for(int i = 0; i < xList.size(); i++){
-				xpixel = floatToPixel(xList.get(i), xmax, xmin, this.getWidth());
+				xpixel = floatToPixelNormal(xList.get(i), xmax, xmin, this.getWidth());
 				ypixel = floatToPixel(yList.get(i), ymax, ymin, this.getHeight());
 				this.lineTo(xpixel, ypixel);
 			}
@@ -103,7 +103,7 @@ public class MyCanvas extends Canvas{
 			double xpixel = 0;
 			double ypixel = 0;
 			for(int i = 0; i < xList.size(); i++){
-				xpixel = floatToPixel(xList.get(i), xMax, xMin, this.getWidth());
+				xpixel = floatToPixelNormal(xList.get(i), xMax, xMin, this.getWidth());
 				ypixel = floatToPixel(yList.get(i), yMax, yMin, this.getHeight());
 				this.lineTo(xpixel, ypixel);
 			}
@@ -131,7 +131,7 @@ public class MyCanvas extends Canvas{
 			xpixel = 0;
 			ypixel = 0;
 			for(int i = 0; i < xList.size(); i++){
-				xpixel = floatToPixel(xList.get(i), xMax, xMin, this.getWidth());
+				xpixel = floatToPixelNormal(xList.get(i), xMax, xMin, this.getWidth());
 				ypixel = floatToPixel(yList2.get(i), yMax, yMin, this.getHeight());
 				this.lineTo(xpixel, ypixel);
 			}
@@ -140,12 +140,23 @@ public class MyCanvas extends Canvas{
 	}
 	
 	public double floatToPixel(double input, double max, double min, double pixelArea){
-		double margin = 10;
+		double margin = 40;
     	double maxArea = (max - min);
     	double AreaOfPixels = pixelArea - 2 * margin;
     	double pixel = 0;
     	
-    	pixel = -1.0*(input / maxArea) * AreaOfPixels + AreaOfPixels + ((min / maxArea) * AreaOfPixels);
+    	pixel = -1.0*(input / maxArea) * AreaOfPixels + AreaOfPixels + ((min / maxArea) * AreaOfPixels) + margin;
+    	
+    	return pixel;
+	}
+	
+	public double floatToPixelNormal(double input, double max, double min, double pixelArea){
+		double margin = 40;
+    	double maxArea = (max - min);
+    	double AreaOfPixels = pixelArea - 2 * margin;
+    	double pixel = 0;
+    	
+    	pixel = (input / maxArea) * AreaOfPixels - ( (min / maxArea) * AreaOfPixels) + margin;
     	
     	return pixel;
 	}
@@ -177,13 +188,13 @@ public class MyCanvas extends Canvas{
 		double xMin = xList.stream().min(Double::compare).get();
 		System.out.println("xmin: " + xMin);
 		
-		double xaxepositionInPixel = Math.abs(yMin) / (yMax - yMin) * this.getHeight();
-		
+		//double xaxepositionInPixel = Math.abs(yMin) / (yMax - yMin) * this.getHeight();
+		double xaxepositionInPixel = floatToPixel(0, yMax, yMin, this.getHeight());
 		this.beginPath();
 		this.setStrokeStyle("rgb(0,0,0)");
 		double yPoint = floatToPixel(closestToZero, yMax, yMin, this.getHeight());
 		
-		yPoint = -xaxepositionInPixel + this.getHeight() - margin/2;
+		//yPoint = -xaxepositionInPixel + this.getHeight() - margin/2;
 		
 		System.out.println("nollapiste y-akselilla pixelinä: " + yPoint);
 		this.lineTo(0, yPoint);
@@ -230,6 +241,21 @@ public class MyCanvas extends Canvas{
     	}
     }
 	
+	private int closestToZeroIndex(ArrayList<Double> list){
+        int closestToZero = 0;
+        if(!list.isEmpty()){
+            double zero = Math.abs(list.get(0));
+            for(int i = 0; i < list.size(); i++){
+                if(Math.abs(list.get(i)) < zero){
+                    zero = Math.abs(list.get(i));
+                    closestToZero = i;
+                }
+            }
+        }
+
+        return closestToZero;
+    }
+	
 	public void drawAxes2(ArrayList<Double> xList, ArrayList<Double> yList, ArrayList<Double> yList2, int xTicks, int yTicks){
     	double valueArea = 0;
 		double valueAreaMax1 = yList.stream().max(Double::compare).get() - yList.stream().min(Double::compare).get();
@@ -240,8 +266,10 @@ public class MyCanvas extends Canvas{
 		double xMin = 0.0;
 		xMax = xList.stream().max(Double::compare).get();
 		System.out.println("xmax: " + xMax);
+		double xMaxPixel = floatToPixelNormal(xMax, xMax, xMin, this.getWidth());
 		xMin = xList.stream().min(Double::compare).get();
 		System.out.println("xmin: " + xMin);
+		double xMinPixel = floatToPixelNormal(xMin, xMax, xMin, this.getWidth());
 		
     	if(valueAreaMax1 < valueAreaMax2){
     		valueArea = valueAreaMax2;
@@ -258,77 +286,167 @@ public class MyCanvas extends Canvas{
 			System.out.println("ymin: " + yMin);
 			
 		}
+    	double yMaxPixel = floatToPixel(yMax, yMax, yMin, this.getHeight());
+		double yMinPixel = floatToPixel(yMin, yMax, yMin, this.getHeight());
     	
+    	double xdivision = (0.5f*(xMax - xMin) ) / xTicks;
+        System.out.println("drawTicks -> Stepsize of x: " + xdivision);
+        double ydivision = (0.5f*(yMax - yMin) ) / yTicks;
+        System.out.println("drawTicks -> Stepsize of y: " + ydivision);
+        double xdivPixel = (0.5f*(xMaxPixel - xMinPixel)) / xTicks;
+        System.out.println("drawTicks -> Stepsize of x in pixels: " + xdivPixel);
+        double ydivPixel = (0.5f*(yMinPixel - yMaxPixel)) / yTicks;
+        System.out.println("drawTicks -> Stepsize of y in pixels: " + ydivPixel);
+    	
+    	int tmp = closestToZeroIndex(xList);
+    	double yaxepositionInPixel = floatToPixelNormal(xList.get(tmp), xMax, xMin, this.getWidth());
 		double margin = 10;
     	// First creation of y-axis
 		this.beginPath();
     	this.setStrokeStyle("rgb(0,0,0)");
-    	this.lineTo(0, 0);
-    	this.lineTo(0, this.getHeight());
+    	this.lineTo(yaxepositionInPixel, 0);
+    	this.lineTo(yaxepositionInPixel, this.getHeight());
     	this.stroke();
-    	
-    	double closestToZero = 1;
-		int index = 0;
-    	for(int i = 0; i < xList.size(); i++){
-    		if(Math.abs(yList.get(i)) < closestToZero){
-    			closestToZero = yList.get(i);
-    			index = i;
-    		}
-    	}
-    	
-		
-		//double xaxepositionInPixel = Math.abs(yMin) / (yMax - yMin) * this.getHeight();
-		double xaxepositionInPixel = floatToPixel(0,yMax,yMin,this.getHeight());
+
+    	int tmp2 = closestToZeroIndex(yList);
+		double xaxepositionInPixel = floatToPixel(yList.get(tmp2), yMax, yMin, this.getHeight());
 		
 		this.beginPath();
 		this.setStrokeStyle("rgb(0,0,0)");
-		double yPoint = floatToPixel(closestToZero, yMax, yMin, this.getHeight());
-		
-		//yPoint = -xaxepositionInPixel + this.getHeight() - margin/2;
-		yPoint = xaxepositionInPixel;
-		
-		System.out.println("nollapiste y-akselilla pixelinä: " + yPoint);
-		this.lineTo(0, yPoint);
-		this.lineTo(this.getWidth(), yPoint);
+		double yPoint = xaxepositionInPixel;
+		System.out.println("yPoint: " + yPoint);
+		this.lineTo(0, xaxepositionInPixel);
+		this.lineTo(this.getWidth(), xaxepositionInPixel);
 		this.stroke();
-    	System.out.println("drawGrid(): value of closest to zero: " + closestToZero);
-    	System.out.println("drawGrid(): index of the value which is closest to zero: " + index);
-    	
     	
     	DecimalFormat df = new DecimalFormat("#.#");
     	df.setRoundingMode(RoundingMode.HALF_UP);
     	
-    	// draw x-axis ticks
-    	double tickValue = xMax / xTicks;
-    	double division = (this.getWidth() - margin) / xTicks;
+    	// draw x-axis ticks to positive side
+    	double xvalueinit = xMax / xTicks;
+    	
     	double sum = 0;
     	double sumOfTicks = 0;
-    	for(int i=0; i < (xTicks + 1); i++){
-    		this.beginPath();
-    		this.lineTo(sum, yPoint-5);
-    		this.lineTo(sum, yPoint+5);
-    		this.fillText(String.valueOf(df.format(sumOfTicks)), sum-5, yPoint-10, 10);
-    		this.stroke();
-    		sum += division;
-    		sumOfTicks += tickValue;
+    	double ypixelinit = floatToPixelNormal(yList.get(tmp2), yMax, yMin, this.getHeight());
+    	double xpixelinit = floatToPixelNormal(xList.get(tmp), xMax, xMin, this.getWidth());
+    	System.out.println("xpixelinit: " + xpixelinit);
+    	if(xMin >= 0){
+    		xpixelinit = floatToPixelNormal(xList.get(tmp), xMax, xMin, this.getWidth());
+    		xvalueinit = xList.get(tmp);
+    		for(int i=0; i < 3*xTicks; i++){
+        		xpixelinit += xdivPixel;
+        		xvalueinit += xdivision;
+        		this.beginPath();
+        		this.lineTo(xpixelinit, yPoint-5);
+        		this.lineTo(xpixelinit, yPoint+5);
+        		this.fillText(String.valueOf(df.format(xvalueinit)), xpixelinit, yPoint+20, 10);
+        		this.stroke();
+        		
+        	}
+    	}else{
+    		xpixelinit = floatToPixelNormal(xList.get(tmp), xMax, xMin, this.getWidth());
+    		xvalueinit = xList.get(tmp);
+    		for(int i=0; i < 3*xTicks; i++){
+        		xpixelinit += xdivPixel;
+        		xvalueinit += xdivision;
+        		this.beginPath();
+        		this.lineTo(xpixelinit, yPoint-5);
+        		this.lineTo(xpixelinit, yPoint+5);
+        		this.fillText(String.valueOf(df.format(xvalueinit)), xpixelinit, yPoint+20, 10);
+        		this.stroke();
+        		
+        	}
+    		xpixelinit = floatToPixelNormal(xList.get(tmp), xMax, xMin, this.getWidth());
+    		xvalueinit = xList.get(tmp);
+    		for(int i=0; i < 3*xTicks; i++){
+        		xpixelinit -= xdivPixel;
+        		xvalueinit -= xdivision;
+        		this.beginPath();
+        		this.lineTo(xpixelinit, yPoint-5);
+        		this.lineTo(xpixelinit, yPoint+5);
+        		this.fillText(String.valueOf(df.format(xvalueinit)), xpixelinit, yPoint+20, 10);
+        		this.stroke();
+        		
+        	}
     	}
+    	
     	
     	// draw y-axis ticks
+    	ypixelinit = floatToPixel(yList.get(tmp2), yMax, yMin, this.getHeight());
     	
-    	
-    	tickValue = (yMax - yMin) / yTicks;
-    	division = (this.getHeight() - margin) / yTicks;
-    	sum = this.getHeight() - division;
-    	sumOfTicks = 0;
-    	for(int i=1; i < (xTicks + 1); i++){
-    		sumOfTicks += tickValue;
-    		this.beginPath();
-    		this.lineTo(0-5, sum);
-    		this.lineTo(0+5, sum);
-    		this.fillText(String.valueOf(df.format(sumOfTicks)), 6, sum+5, 20);
-    		this.stroke();
-    		sum -= division;
-    		
+    	double yvalueinit = yList.get(tmp2);
+    	if(yMin >= 0){
+    		xpixelinit = floatToPixelNormal(xList.get(tmp), xMax, xMin, this.getWidth());
+        	for(int i=1; i < (3*yTicks); i++){
+        		ypixelinit -= ydivPixel;
+        		yvalueinit += ydivision;
+        		this.beginPath();
+        		this.lineTo(xpixelinit-5, ypixelinit);
+        		this.lineTo(xpixelinit+5, ypixelinit);
+        		this.fillText(String.valueOf(df.format(yvalueinit)), xpixelinit+10, ypixelinit+5, 20);
+        		this.stroke();
+        		sum -= ydivision;
+        		
+        	}
+    	}else{
+    		xpixelinit = floatToPixelNormal(xList.get(tmp), xMax, xMin, this.getWidth());
+    		yvalueinit = yList.get(tmp2);
+    		ypixelinit = floatToPixel(yList.get(tmp2), yMax, yMin, this.getHeight());
+        	for(int i=1; i < (3*yTicks); i++){
+        		ypixelinit -= ydivPixel;
+        		yvalueinit += ydivision;
+        		this.beginPath();
+        		this.lineTo(xpixelinit-5, ypixelinit);
+        		this.lineTo(xpixelinit+5, ypixelinit);
+        		this.fillText(String.valueOf(df.format(yvalueinit)), xpixelinit+10, ypixelinit+5, 20);
+        		this.stroke();
+        		sum -= ydivision;
+        		
+        	}
+        	xpixelinit = floatToPixelNormal(xList.get(tmp), xMax, xMin, this.getWidth());
+    		yvalueinit = yList.get(tmp2);
+    		ypixelinit = floatToPixel(yList.get(tmp2), yMax, yMin, this.getHeight());
+        	for(int i=1; i < (3*yTicks); i++){
+        		ypixelinit += ydivPixel;
+        		yvalueinit -= ydivision;
+        		this.beginPath();
+        		this.lineTo(xpixelinit-5, ypixelinit);
+        		this.lineTo(xpixelinit+5, ypixelinit);
+        		this.fillText(String.valueOf(df.format(yvalueinit)), xpixelinit+10, ypixelinit+5, 20);
+        		this.stroke();
+        		sum -= ydivision;
+        		
+        	}
     	}
+    	
+    }
+	private double getMaxIndexromArrayList(ArrayList<Float> list){
+        float max = 0;
+        int maxIndex = 0;
+        if(!list.isEmpty()){
+            for(int i = 0; i<list.size(); i++){
+                if(list.get(i) > max){
+                    max = list.get(i);
+                    maxIndex = i;
+                }
+            }
+        }
+        return maxIndex;
+
+    }
+
+    private double getMinIndexFromArrayList(ArrayList<Float> list){
+        double min = 10.0f;
+        int minIndex = 0;
+        if(!list.isEmpty()){
+            for(int i = 0; i < list.size(); i++){
+                if(list.get(i) < min){
+                    min = list.get(i);
+                    minIndex = i;
+                }
+            }
+        }
+
+        return minIndex;
     }
 }

@@ -28,7 +28,8 @@ public class SpeedControl {
 	}
 	
 	private void calculatePMSMSCVariables(){
-		double trc = 0.003;
+		//double trc = 0.003; // alkup. aika tiukalla!
+		double trc = 0.1;
 		double alphac = Math.log(9.0)/trc;
 		
 		kp = alphac * PMSM.Jtot / PMSM.polepairs;

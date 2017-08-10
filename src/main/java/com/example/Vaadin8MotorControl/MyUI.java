@@ -21,7 +21,9 @@ import javax.servlet.annotation.WebServlet;
 import org.vaadin.hezamu.canvas.Canvas;
 
 import com.example.math.CurrentControl;
+import com.example.math.LPF;
 import com.example.math.PMSM;
+import com.example.math.SVPWM;
 import com.example.math.SpeedControl;
 import com.example.math.TaurefToIqref;
 import com.example.math.VectorPair;
@@ -58,6 +60,7 @@ import com.vaadin.ui.themes.ValoTheme;
  */
 @Theme("mytheme")
 public class MyUI extends UI {
+	double timeStep = 0.0001;
 	double time = 0.0;
 	double maxOfTime = 10.0;
 	double minOfTime = 0.0;
@@ -67,7 +70,11 @@ public class MyUI extends UI {
 	SpeedControl speedControl = new SpeedControl();
 	TaurefToIqref calculate = new TaurefToIqref();
 	CurrentControl currentControl = new CurrentControl();
+	SVPWM svpwm = new SVPWM();
 	PMSM pmsm = new PMSM();
+	LPF dCurrentLPF = new LPF(200.0, timeStep);
+	LPF qCurrentLPF = new LPF(200.0, timeStep);
+	
 	// Lists of simulated values
 	ArrayList<Double> timeList = new ArrayList<Double>();
 	ArrayList<Double> wrefList = new ArrayList<Double>();
@@ -78,7 +85,8 @@ public class MyUI extends UI {
 	ArrayList<Double> idList = new ArrayList<Double>();
 	ArrayList<Double> udList = new ArrayList<Double>();
 	ArrayList<Double> uqList = new ArrayList<Double>();
-	
+	ArrayList<Double> idFilteredList = new ArrayList<Double>();
+	ArrayList<Double> iqFilteredList = new ArrayList<Double>();
 	
 	Label progressLabel = new Label("");
 	Label infoLabel = new Label("", ContentMode.HTML);
@@ -124,6 +132,8 @@ public class MyUI extends UI {
     		idList.clear();
     		udList.clear();
     		uqList.clear();
+    		idFilteredList.clear();
+    		iqFilteredList.clear();
     	});
 
     	runButton.addClickListener( e -> {
@@ -132,9 +142,9 @@ public class MyUI extends UI {
     		simulate();
     		
     		plotOptions.setItems(listOfVectorPairs);
-    		canvas.drawAxes(timeList, wList, 8, 8);
-    		canvas.plot(timeList, wrefList, "blue");
-    		canvas.plot(timeList, wList, "green");
+    		canvas.clear();
+			canvas.drawAxes2(timeList, wrefList, wList, 8, 8);
+			canvas.plot2(timeList, wrefList, wList, "blue", "green");
     		
     		System.out.println("wrefmin: " + wrefList.stream().min(Double::compare).get());
         	System.out.println("wrefmax: " + wrefList.stream().max(Double::compare).get());
@@ -156,33 +166,29 @@ public class MyUI extends UI {
         });
     	
     	plotOptions.addValueChangeListener(e -> {
-    		if(plotOptions.getValue().toString().equals("iqref vs iq")){
+    		if(plotOptions.getValue().toString().equals("iqref(t) & iq(t)")){
     			canvas.clear();
     			canvas.drawAxes2(timeList, iqrefList, iqList, 8, 8);
-    			//canvas.plot(timeList, iqrefList, "blue");
-    			//canvas.plot(timeList, iqList, "green");
     			canvas.plot2(timeList, iqrefList, iqList, "blue", "green");
-    		}else if(plotOptions.getValue().toString().equals("idref vs id")){
+    		}else if(plotOptions.getValue().toString().equals("idref(t) & id(t)")){
     			canvas.clear();
     			canvas.drawAxes2(timeList, idrefList, idList, 8, 8);
-    			//canvas.plot(timeList, idrefList, "blue");
-    			//canvas.plot(timeList, idList, "green");
     			canvas.plot2(timeList, idrefList, idList, "blue", "green");
 
-    		}else if(plotOptions.getValue().toString().equals("ud vs uq")){
+    		}else if(plotOptions.getValue().toString().equals("ud(t) & uq(t)")){
     			canvas.clear();
     			canvas.drawAxes2(timeList, udList, uqList, 8, 8);
-    			//canvas.plot(timeList, udList, "blue");
-    			//canvas.plot(timeList, uqList, "magenta");
     			canvas.plot2(timeList, udList, uqList, "blue", "magenta");
 
-    		}else if(plotOptions.getValue().toString().equals("wref vs w")){
+    		}else if(plotOptions.getValue().toString().equals("wref(t) & w(t)")){
     			canvas.clear();
     			canvas.drawAxes2(timeList, wrefList, wList, 8, 8);
-    			//canvas.plot(timeList, wrefList, "blue");
-    			//canvas.plot(timeList, wList, "green");
     			canvas.plot2(timeList, wrefList, wList, "blue", "green");
 
+    		}else if(plotOptions.getValue().toString().equals("idFiltered(t) & iqFiltered(t)")){
+    			canvas.clear();
+    			canvas.drawAxes2(timeList, idFilteredList, iqFilteredList, 8, 8);
+    			canvas.plot2(timeList, idFilteredList, iqFilteredList, "blue", "green");
     		}
     	});
     	
@@ -265,10 +271,19 @@ public class MyUI extends UI {
 					speedControl.simulateSpeedControl(wref,pmsm.getW());
 					double iqref = calculate.calculateIqref(speedControl.getTauref());
 					
-					currentControl.simulateCurrentControl(0.0, iqref, pmsm.getW(), pmsm.getId(), pmsm.getIq());
-					pmsm.simulateMotor(currentControl.getUdref(), currentControl.getUqref(), pmsm.getWr());
+					double filteredId = dCurrentLPF.filter(pmsm.getId());
+					double filteredIq = qCurrentLPF.filter(pmsm.getIq());
+					//System.out.println("["+filteredId+" "+filteredIq+"]");
+					
+					//currentControl.simulateCurrentControl(0.0, iqref, pmsm.getW(), pmsm.getId(), pmsm.getIq());
+					currentControl.simulateCurrentControl(0.0, iqref, pmsm.getW(), filteredId, filteredIq);
+					svpwm.simulateSVPWM(currentControl.getUdref(), currentControl.getUqref(), pmsm.getThetar(), time);
+					//pmsm.simulateMotor(currentControl.getUdref(), currentControl.getUqref(), pmsm.getWr());
+					pmsm.simulateMotor(svpwm.getUd_pwm(), svpwm.getUq_pwm(), pmsm.getWr());
 					
 					time += 0.0001;
+					
+					
 					timeList.add(time);
 					wrefList.add(wref);
 					wList.add(pmsm.getW());
@@ -278,6 +293,8 @@ public class MyUI extends UI {
 					idList.add(pmsm.getId());
 					udList.add(currentControl.getUdref());
 					uqList.add(currentControl.getUqref());
+					idFilteredList.add(filteredId);
+					iqFilteredList.add(filteredIq);
 					//System.out.println(pmsm.getId());
 					
 				} catch (NumberFormatException e1) {
@@ -300,10 +317,11 @@ public class MyUI extends UI {
     	
     	progressLabel.setValue("Simulation ready. Waiting to plot results!");
     	
-		listOfVectorPairs.add(new VectorPair(wrefList, wList, "wref vs w"));
-		listOfVectorPairs.add(new VectorPair(iqrefList, iqList, "iqref vs iq"));
-		listOfVectorPairs.add(new VectorPair(idrefList, idList, "idref vs id"));
-		listOfVectorPairs.add(new VectorPair(udList, uqList, "ud vs uq"));
+		listOfVectorPairs.add(new VectorPair(wrefList, wList, "wref(t) & w(t)"));
+		listOfVectorPairs.add(new VectorPair(iqrefList, iqList, "iqref(t) & iq(t)"));
+		listOfVectorPairs.add(new VectorPair(idrefList, idList, "idref(t) & id(t)"));
+		listOfVectorPairs.add(new VectorPair(udList, uqList, "ud(t) & uq(t)"));
+		listOfVectorPairs.add(new VectorPair(idFilteredList, iqFilteredList, "idFiltered(t) & iqFiltered(t)"));
 		
     }
     

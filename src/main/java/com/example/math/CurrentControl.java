@@ -57,7 +57,7 @@ public class CurrentControl {
 	}
 	
 	private void calculatePMSMCCVariables(){
-		double trc = 0.001;
+		double trc = 0.005;
 		double alphac = Math.log(9.0)/trc;
 		
 		kpd = alphac * PMSM.ld;

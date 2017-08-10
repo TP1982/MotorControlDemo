@@ -9,6 +9,12 @@ public class VectorPair {
 	private double maxOfRef;
 	private double minOfMeas;
 	private double maxOfMeas;
+	private int refMinIndex;
+	private int refMaxIndex;
+	private int measMinIndex;
+	private int measMaxIndex;
+	private int refZeroIndex;
+	private int measZeroIndex;
 	private ArrayList<Double> reference;
 	private ArrayList<Double> measured;
 	private String name;
@@ -23,7 +29,27 @@ public class VectorPair {
 		maxOfRef = reference.stream().max(Double::compare).get();
 		minOfMeas = measured.stream().min(Double::compare).get();
 		maxOfMeas = measured.stream().max(Double::compare).get();
+		refZeroIndex = closestToZeroIndex(reference);
+		measZeroIndex = closestToZeroIndex(measured);
+		
 	}
+	
+	public int closestToZeroIndex(ArrayList<Double> list){
+        int closestToZero = 0;
+        if(!list.isEmpty()){
+            double zero = Math.abs(list.get(0));
+            for(int i = 0; i < list.size(); i++){
+                if(Math.abs(list.get(i)) < zero){
+                    zero = Math.abs(list.get(i));
+                    closestToZero = i;
+                }
+            }
+        }
+
+        return closestToZero;
+    }
+	
+	
 	
 	public String getName() {
 		return name;
